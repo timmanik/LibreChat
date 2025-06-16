@@ -13,7 +13,6 @@ const { fetchModels } = require('~/server/services/ModelService');
 const OpenAIClient = require('~/app/clients/OpenAIClient');
 const { isUserProvided } = require('~/server/utils');
 const getLogStores = require('~/cache/getLogStores');
-const { findUser } = require('~/models');
 
 const { PROXY } = process.env;
 
