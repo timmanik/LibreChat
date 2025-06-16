@@ -17,31 +17,78 @@ const { findUser } = require('~/models');
 
 const { PROXY } = process.env;
 
-const resolveUserEmail = async (value, userId) => {
-  try {
-    const user = await findUser({ _id: userId });
-    return user?.email && value.includes('${USER_EMAIL}')
-      ? value.replace('${USER_EMAIL}', user.email)
-      : value;
-  } catch {
-    throw new Error('User not found');
+/**
+ * List of allowed user fields that can be used in custom endpoint configurations.
+ * These are non-sensitive string/boolean fields that are available on the user object.
+ */
+const ALLOWED_USER_FIELDS = [
+  'name',
+  'username',
+  'email',
+  'provider',
+  'role',
+  'googleId',
+  'facebookId',
+  'openidId',
+  'samlId',
+  'ldapId',
+  'githubId',
+  'discordId',
+  'appleId',
+  'emailVerified',
+  'twoFactorEnabled',
+  'termsAccepted',
+];
+
+/**
+ * Processes a string value to replace user field placeholders
+ * @param value - The string value to process
+ * @param user - The user object
+ * @returns The processed string with placeholders replaced
+ */
+const processUserPlaceholders = (value, user) => {
+  if (!user || typeof value !== 'string') {
+    return value;
   }
+
+  for (const field of ALLOWED_USER_FIELDS) {
+    const placeholder = `{{LIBRECHAT_USER_${field.toUpperCase()}}}`;
+    if (value.includes(placeholder)) {
+      const fieldValue = user[field];
+      const replacementValue = fieldValue != null ? String(fieldValue) : '';
+      value = value.replace(new RegExp(placeholder, 'g'), replacementValue);
+    }
+  }
+
+  return value;
 };
 
-const resolveHeaders = async (headers, userId) => {
+/**
+ * Resolves headers by processing environment variables and user placeholders
+ * @param headers - The headers object to process
+ * @param user - The user object containing user fields
+ * @returns The processed headers object
+ */
+const resolveHeaders = (headers, user) => {
   const resolvedHeaders = {};
   if (headers && typeof headers === 'object') {
-    await Promise.all(
-      Object.entries(headers).map(async ([key, value]) => {
-        try {
-          resolvedHeaders[key] = value.includes('${USER_EMAIL}')
-            ? await resolveUserEmail(value, userId)
-            : extractEnvVariable(value);
-        } catch {
-          resolvedHeaders[key] = 'null';
+    Object.entries(headers).forEach(([key, value]) => {
+      try {
+        // Handle special case for user ID (same as mcp.ts)
+        if (value === '{{LIBRECHAT_USER_ID}}' && user?.id != null) {
+          resolvedHeaders[key] = String(user.id);
+          return;
         }
-      }),
-    );
+
+        // Process environment variables first
+        let processedValue = extractEnvVariable(value);
+        // Then process user placeholders
+        processedValue = processUserPlaceholders(processedValue, user);
+        resolvedHeaders[key] = processedValue;
+      } catch {
+        resolvedHeaders[key] = 'null';
+      }
+    });
   }
   return resolvedHeaders;
 };
@@ -58,7 +105,8 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
   const CUSTOM_API_KEY = extractEnvVariable(endpointConfig.apiKey);
   const CUSTOM_BASE_URL = extractEnvVariable(endpointConfig.baseURL);
 
-  const resolvedHeaders = await resolveHeaders(endpointConfig.headers, req.user.id);
+  // Use the new resolveHeaders function with the full user object
+  const resolvedHeaders = resolveHeaders(endpointConfig.headers, req.user);
 
   if (CUSTOM_API_KEY.match(envVarRegex)) {
     throw new Error(`Missing API Key for ${endpoint}.`);
