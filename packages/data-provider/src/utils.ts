@@ -52,3 +52,78 @@ export function extractEnvVariable(value: string) {
 
   return result;
 }
+
+/**
+ * List of allowed user fields that can be used in placeholder substitution.
+ * These are non-sensitive string/boolean fields from the user object.
+ */
+export const ALLOWED_USER_FIELDS = [
+  'name',
+  'username', 
+  'email',
+  'provider',
+  'role',
+  'googleId',
+  'facebookId',
+  'openidId',
+  'samlId',
+  'ldapId',
+  'githubId',
+  'discordId',
+  'appleId',
+  'emailVerified',
+  'twoFactorEnabled',
+  'termsAccepted',
+] as const;
+
+/**
+ * Processes a string value to replace user field placeholders
+ * @param value - The string value to process
+ * @param user - The user object
+ * @returns The processed string with placeholders replaced
+ */
+export function processUserPlaceholders(value: string, user?: any): string {
+  if (!user || typeof value !== 'string') {
+    return value;
+  }
+
+  // Handle special case for user ID
+  if (value === '{{LIBRECHAT_USER_ID}}' && user?.id != null) {
+    return String(user.id);
+  }
+
+  for (const field of ALLOWED_USER_FIELDS) {
+    const placeholder = `{{LIBRECHAT_USER_${field.toUpperCase()}}}`;
+    if (value.includes(placeholder)) {
+      const fieldValue = user[field];
+      const replacementValue = fieldValue != null ? String(fieldValue) : '';
+      value = value.replace(new RegExp(placeholder, 'g'), replacementValue);
+    }
+  }
+
+  return value;
+}
+
+/**
+ * Processes an object's string values to replace environment variables and user placeholders
+ * @param obj - The object to process (e.g., headers, env vars)
+ * @param user - The user object containing user fields
+ * @returns The processed object with variables replaced
+ */
+export function processConfigObject(obj: Record<string, string>, user?: any): Record<string, string> {
+  const processed: Record<string, string> = {};
+  
+  if (obj && typeof obj === 'object') {
+    Object.entries(obj).forEach(([key, value]) => {
+      try {
+        let processedValue = extractEnvVariable(value);
+        processedValue = processUserPlaceholders(processedValue, user);
+        processed[key] = processedValue;
+      } catch {
+        processed[key] = 'null';
+      }
+    });
+  }
+  
+  return processed;
+}
