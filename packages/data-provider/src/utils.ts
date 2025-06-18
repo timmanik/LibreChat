@@ -77,14 +77,20 @@ export const ALLOWED_USER_FIELDS = [
 ] as const;
 
 /**
- * Processes a string value to replace user field placeholders
+ * Processes a string value to replace user field placeholders and JWT token
  * @param value - The string value to process
  * @param user - The user object
+ * @param token - The JWT token from the request
  * @returns The processed string with placeholders replaced
  */
-export function processUserPlaceholders(value: string, user?: any): string {
+export function processUserPlaceholders(value: string, user?: any, token?: string): string {
   if (!user || typeof value !== 'string') {
     return value;
+  }
+
+  // Handle JWT token placeholder
+  if (token && value.includes('{{LIBRECHAT_USER_TOKEN}}')) {
+    value = value.replace(/{{LIBRECHAT_USER_TOKEN}}/g, token);
   }
 
   // Handle special case for user ID
@@ -105,19 +111,20 @@ export function processUserPlaceholders(value: string, user?: any): string {
 }
 
 /**
- * Processes an object's string values to replace environment variables and user placeholders
+ * Processes an object's string values to replace environment variables, user placeholders, and JWT tokens
  * @param obj - The object to process (e.g., headers, env vars)
  * @param user - The user object containing user fields
+ * @param token - The JWT token from the request
  * @returns The processed object with variables replaced
  */
-export function processConfigObject(obj: Record<string, string>, user?: any): Record<string, string> {
+export function processConfigObject(obj: Record<string, string>, user?: any, token?: string): Record<string, string> {
   const processed: Record<string, string> = {};
   
   if (obj && typeof obj === 'object') {
     Object.entries(obj).forEach(([key, value]) => {
       try {
         let processedValue = extractEnvVariable(value);
-        processedValue = processUserPlaceholders(processedValue, user);
+        processedValue = processUserPlaceholders(processedValue, user, token);
         processed[key] = processedValue;
       } catch {
         processed[key] = 'null';
