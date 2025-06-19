@@ -20,7 +20,8 @@ const publicSharedLinksEnabled =
     isEnabled(process.env.ALLOW_SHARED_LINKS_PUBLIC));
 
 const messageFeedbackEnabled =
-  process.env.ENABLE_MESSAGE_FEEDBACK === undefined || isEnabled(process.env.ENABLE_MESSAGE_FEEDBACK);
+  process.env.ENABLE_MESSAGE_FEEDBACK === undefined ||
+  isEnabled(process.env.ENABLE_MESSAGE_FEEDBACK);
 
 router.get('/', async function (req, res) {
   const cache = getLogStores(CacheKeys.CONFIG_STORE);

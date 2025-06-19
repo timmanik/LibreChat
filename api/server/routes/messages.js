@@ -265,7 +265,8 @@ router.put('/:conversationId/:messageId/feedback', validateMessageReq, async (re
 
     // Check if message feedback is enabled (defaults to true if not set)
     const messageFeedbackEnabled =
-      process.env.ENABLE_MESSAGE_FEEDBACK === undefined || isEnabled(process.env.ENABLE_MESSAGE_FEEDBACK);
+      process.env.ENABLE_MESSAGE_FEEDBACK === undefined ||
+      isEnabled(process.env.ENABLE_MESSAGE_FEEDBACK);
     
     if (!messageFeedbackEnabled) {
       return res.status(400).json({ error: 'Message feedback feature is disabled' });
