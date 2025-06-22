@@ -248,7 +248,7 @@ const HoverButtons = ({
       />
 
       {/* Feedback Buttons */}
-      {!isCreatedByUser && startupConfig?.messageFeedbackEnabled !== false && (
+      {!isCreatedByUser && interfaceConfig?.messageFeedback !== false && (
         <Feedback handleFeedback={handleFeedback} feedback={message.feedback} isLast={isLast} />
       )}
 
