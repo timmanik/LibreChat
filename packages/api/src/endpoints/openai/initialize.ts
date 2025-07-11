@@ -90,6 +90,8 @@ export const initializeOpenAI = async ({
     clientOptions.headers = resolveHeaders(
       { ...headers, ...(clientOptions.headers ?? {}) },
       req.user,
+      undefined,
+      req.idpToken,
     );
 
     const groupName = modelGroupMap[modelName || '']?.group;

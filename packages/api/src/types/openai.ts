@@ -52,6 +52,7 @@ export interface RequestData {
   user: {
     id: string;
   };
+  idpToken?: string;
   body: {
     model?: string;
     endpoint?: string;

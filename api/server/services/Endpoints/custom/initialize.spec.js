@@ -56,6 +56,7 @@ describe('custom/initializeClient', () => {
   const mockRequest = {
     body: { endpoint: 'test-endpoint' },
     user: { id: 'user-123', email: 'test@example.com' },
+    idpToken: 'idp-123',
     app: { locals: {} },
   };
   const mockResponse = {};
@@ -70,6 +71,8 @@ describe('custom/initializeClient', () => {
     expect(resolveHeaders).toHaveBeenCalledWith(
       { 'x-user': '{{LIBRECHAT_USER_ID}}', 'x-email': '{{LIBRECHAT_USER_EMAIL}}' },
       { id: 'user-123', email: 'test@example.com' },
+      undefined,
+      'idp-123',
     );
   });
 
