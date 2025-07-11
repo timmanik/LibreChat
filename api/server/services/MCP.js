@@ -180,6 +180,7 @@ async function createMCPTool({ req, res, toolKey, provider: _provider }) {
           signal: derivedSignal,
         },
         user: config?.configurable?.user,
+        idpToken: req.idpToken,
         customUserVars,
         flowManager,
         tokenMethods: {

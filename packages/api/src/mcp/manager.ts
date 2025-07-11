@@ -376,6 +376,7 @@ export class MCPManager {
     serverName,
     flowManager,
     customUserVars,
+    idpToken,
     tokenMethods,
     oauthStart,
     oauthEnd,
@@ -385,6 +386,7 @@ export class MCPManager {
     serverName: string;
     flowManager: FlowStateManager<MCPOAuthTokens | null>;
     customUserVars?: Record<string, string>;
+    idpToken?: string;
     tokenMethods?: TokenMethods;
     oauthStart?: (authURL: string) => Promise<void>;
     oauthEnd?: () => Promise<void>;
@@ -438,7 +440,7 @@ export class MCPManager {
       );
     }
 
-    config = { ...(processMCPEnv(config, user, customUserVars) ?? {}) };
+    config = { ...(processMCPEnv(config, user, customUserVars, idpToken) ?? {}) };
     /** If no in-memory tokens, tokens from persistent storage */
     let tokens: MCPOAuthTokens | null = null;
     if (tokenMethods?.findToken) {
@@ -823,6 +825,7 @@ export class MCPManager {
     flowManager,
     oauthStart,
     oauthEnd,
+    idpToken,
     customUserVars,
   }: {
     user?: TUser;
@@ -836,6 +839,7 @@ export class MCPManager {
     flowManager: FlowStateManager<MCPOAuthTokens | null>;
     oauthStart?: (authURL: string) => Promise<void>;
     oauthEnd?: () => Promise<void>;
+    idpToken?: string;
   }): Promise<t.FormattedToolResponse> {
     /** User-specific connection */
     let connection: MCPConnection | undefined;
@@ -854,6 +858,7 @@ export class MCPManager {
           oauthStart,
           oauthEnd,
           signal: options?.signal,
+          idpToken,
           customUserVars,
         });
       } else {
