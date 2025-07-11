@@ -201,6 +201,31 @@ describe('resolveHeaders', () => {
     });
   });
 
+  it('should replace IdP token placeholder when token provided', () => {
+    const headers = {
+      Authorization: 'Bearer {{LIBRECHAT_IDP_TOKEN}}',
+    };
+    const result = resolveHeaders(headers, undefined, undefined, 'token-abc');
+    expect(result).toEqual({ Authorization: 'Bearer token-abc' });
+  });
+
+  it('should leave IdP token placeholder unchanged when token missing', () => {
+    const headers = {
+      Authorization: 'Bearer {{LIBRECHAT_IDP_TOKEN}}',
+    };
+    const result = resolveHeaders(headers);
+    expect(result).toEqual({ Authorization: 'Bearer {{LIBRECHAT_IDP_TOKEN}}' });
+  });
+
+  it('should prioritize custom vars over IdP token', () => {
+    const headers = {
+      Authorization: 'Bearer {{LIBRECHAT_IDP_TOKEN}}',
+    };
+    const customVars = { LIBRECHAT_IDP_TOKEN: 'custom-token' };
+    const result = resolveHeaders(headers, undefined, customVars, 'real-token');
+    expect(result).toEqual({ Authorization: 'Bearer custom-token' });
+  });
+
   it('should handle boolean user fields', () => {
     const user = createTestUser({
       id: 'user-123',

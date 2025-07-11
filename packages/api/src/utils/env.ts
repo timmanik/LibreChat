@@ -72,10 +72,12 @@ function processSingleValue({
   originalValue,
   customUserVars,
   user,
+  idpToken,
 }: {
   originalValue: string;
   customUserVars?: Record<string, string>;
   user?: TUser;
+  idpToken?: string;
 }): string {
   let value = originalValue;
 
@@ -91,6 +93,11 @@ function processSingleValue({
 
   // 2. Replace user field placeholders (e.g., {{LIBRECHAT_USER_EMAIL}}, {{LIBRECHAT_USER_ID}})
   value = processUserPlaceholders(value, user);
+
+  // 2a. Replace IdP token placeholder if provided
+  if (idpToken && value.includes('{{LIBRECHAT_IDP_TOKEN}}')) {
+    value = value.replace(/\{\{LIBRECHAT_IDP_TOKEN\}\}/g, idpToken);
+  }
 
   // 3. Replace system environment variables
   value = extractEnvVariable(value);
@@ -109,6 +116,7 @@ export function processMCPEnv(
   obj: Readonly<MCPOptions>,
   user?: TUser,
   customUserVars?: Record<string, string>,
+  idpToken?: string,
 ): MCPOptions {
   if (obj === null || obj === undefined) {
     return obj;
@@ -119,7 +127,12 @@ export function processMCPEnv(
   if ('env' in newObj && newObj.env) {
     const processedEnv: Record<string, string> = {};
     for (const [key, originalValue] of Object.entries(newObj.env)) {
-      processedEnv[key] = processSingleValue({ originalValue, customUserVars, user });
+      processedEnv[key] = processSingleValue({
+        originalValue,
+        customUserVars,
+        user,
+        idpToken,
+      });
     }
     newObj.env = processedEnv;
   }
@@ -129,14 +142,24 @@ export function processMCPEnv(
   if ('headers' in newObj && newObj.headers) {
     const processedHeaders: Record<string, string> = {};
     for (const [key, originalValue] of Object.entries(newObj.headers)) {
-      processedHeaders[key] = processSingleValue({ originalValue, customUserVars, user });
+      processedHeaders[key] = processSingleValue({
+        originalValue,
+        customUserVars,
+        user,
+        idpToken,
+      });
     }
     newObj.headers = processedHeaders;
   }
 
   // Process URL if it exists (for WebSocket, SSE, StreamableHTTP types)
   if ('url' in newObj && newObj.url) {
-    newObj.url = processSingleValue({ originalValue: newObj.url, customUserVars, user });
+    newObj.url = processSingleValue({
+      originalValue: newObj.url,
+      customUserVars,
+      user,
+      idpToken,
+    });
   }
 
   return newObj;
@@ -147,12 +170,14 @@ export function processMCPEnv(
  * @param headers - The headers object to process
  * @param user - Optional user object for replacing user field placeholders (can be partial with just id)
  * @param customUserVars - Optional custom user variables to replace placeholders
+ * @param idpToken - Optional IdP token for replacing the {{LIBRECHAT_IDP_TOKEN}} placeholder
  * @returns - The processed headers with all placeholders replaced
  */
 export function resolveHeaders(
   headers: Record<string, string> | undefined,
   user?: Partial<TUser> | { id: string },
   customUserVars?: Record<string, string>,
+  idpToken?: string,
 ) {
   const resolvedHeaders = { ...(headers ?? {}) };
 
@@ -162,6 +187,7 @@ export function resolveHeaders(
         originalValue: headers[key],
         customUserVars,
         user: user as TUser,
+        idpToken,
       });
     });
   }
